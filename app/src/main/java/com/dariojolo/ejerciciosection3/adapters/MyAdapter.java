@@ -7,6 +7,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -66,7 +67,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         return frutas.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    public class ViewHolder extends RecyclerView.ViewHolder implements View.OnCreateContextMenuListener, MenuItem.OnMenuItemClickListener {
 
         //Implementamos las interfaces OnCreateContextMenuListener y OnMenuItemClickListener
         //para hacer uso del context menu en recyclerView y sobreescribimos los metodos
@@ -91,12 +92,12 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             //Procesamos los datos a renderizar
             textViewName.setText(fruta.getNombre());
             textViewDesc.setText(fruta.getDescripcion());
-            textViewCant.setText(""+fruta.getCantidad());
+            textViewCant.setText("" + fruta.getCantidad());
             //Logica aplicada para limitar  la cantidad de cada fruta
-            if (fruta.getCantidad() == Fruta.LIMIT_QUANTITY){
+            if (fruta.getCantidad() == Fruta.LIMIT_QUANTITY) {
                 textViewCant.setTextColor(ContextCompat.getColor(activity, R.color.colorAlert));
                 textViewCant.setTypeface(null, Typeface.BOLD);
-            }else{
+            } else {
                 textViewCant.setTextColor(ContextCompat.getColor(activity, R.color.defaultTextColor));
                 textViewCant.setTypeface(null, Typeface.NORMAL);
             }
@@ -109,42 +110,59 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
             //itemView.setOnClickListener(new View.OnClickListener() {
             //    @Override
             //    public void onClick(View v) {
-             //       listener.onItemClick(fruta, getAdapterPosition());
-             //   }
+            //       listener.onItemClick(fruta, getAdapterPosition());
+            //   }
             //});
             //Añadimos el listener click para cada elemento fruta
-                imageViewFruta.setOnClickListener(new View.OnClickListener() {
+            imageViewFruta.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     listener.onItemClick(fruta, getAdapterPosition());
-                });
-            }
+                }
+            });
 
+        }
 
         // Sobreescribimos OnCreateContextMenu dentro del ViewHolder
         // En vez de hacerlo en el activity
-           @Override
-           public void onCreateContextMenu(ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo){
-
+        @Override
+        public void onCreateContextMenu(ContextMenu contextMenu, View view, ContextMenu.ContextMenuInfo contextMenuInfo) {
+            //Recogemos la posicion con el metodo getAdapterPosition
+            Fruta frutaSeleccionada = frutas.get(this.getAdapterPosition());
+            //Establecemos titulo e icono para cada elemento, mirando en sus propiedades
+            contextMenu.setHeaderTitle(frutaSeleccionada.getNombre());
+            contextMenu.setHeaderIcon(frutaSeleccionada.getImgIcono());
+            //Inflamos el menu
+            MenuInflater inflater = activity.getMenuInflater();
+            inflater.inflate(R.menu.context_menu, contextMenu);
+            //Por ultimo añadimos uno por uno el listener onMenuItemClick para controlar las acciones en el contextMenu
+            //Anteriormente lo manejabamos con el metodo onContextItemSelected en el activity
+            for (int i = 0; i < contextMenu.size(); i++) {
+                contextMenu.getItem(i).setOnMenuItemClickListener(this);
             }
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                // No obtenemos nuestro objeto info
-                // porque la posicion la podemos rescatar desde getAdapterPosition()
-                switch (menuItem.getItemId()){
-                    case: R.id.del_fruta:
+        }
+
+        @Override
+        public boolean onMenuItemClick(MenuItem menuItem) {
+            // No obtenemos nuestro objeto info
+            // porque la posicion la podemos rescatar desde getAdapterPosition()
+            switch (menuItem.getItemId()) {
+                case R.id.del_fruta:
                     // Como estamos dentro del adaptador podemos acceder  a los metodos propios
                     // de èl como notifyItemRemove o notifyItemChange
                     frutas.remove(getAdapterPosition());
                     notifyItemRemoved(getAdapterPosition());
                     return true;
-                    case R.id.reset_fruta:
+                case R.id.reset_fruta:
+                    frutas.get(getAdapterPosition()).resetQuantity();
+                    notifyItemChanged(getAdapterPosition());
+                    return true;
+                default:
+                    return false;
 
-
-                    }
-                }
             }
         }
+    }
 
     public interface OnItemClickListener {
         void onItemClick(Fruta fruta , int position);
